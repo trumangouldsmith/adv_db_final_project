@@ -134,10 +134,10 @@ const ChatInterface = () => {
         {chatHistory.length === 0 && (
           <Box sx={{ textAlign: 'center', mt: 4 }}>
             <Typography variant="h6" color="text.secondary">
-              Ask me anything about alumni, events, or photos
+              Ask me anything about alumni and events in natural language
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              Examples: "Find all alumni at Google", "Show upcoming events", "Get photos from gala"
+              Examples: "Find all alumni at Google", "Show upcoming events", "Who graduated in 2024?"
             </Typography>
           </Box>
         )}
@@ -155,8 +155,8 @@ const ChatInterface = () => {
             {message.type === 'llm' && (
               <Box sx={{ mb: 1 }}>
                 <Chip label="Generated GraphQL Query" size="small" sx={{ mb: 1 }} />
-                <Paper sx={{ p: 2, bgcolor: 'info.light' }}>
-                  <Typography variant="body2" component="pre" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
+                <Paper sx={{ p: 2, bgcolor: '#2a2a2a' }}>
+                  <Typography variant="body2" component="pre" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap', color: '#f1f1f1' }}>
                     {message.content}
                   </Typography>
                 </Paper>
