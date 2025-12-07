@@ -80,8 +80,10 @@ Create Examples (Missing Info):
 - "RSVP to the gala" -> NEED_INFO: Please provide the Event_id for the event you want to RSVP to
 
 Create Examples (Complete Info):
-- "Create event Tech Talk on 2025-12-15 at 18:00 in Kansas City" -> mutation {{ createEvent(input: {{ Name: "Tech Talk", Location: "Kansas City", Date: "2025-12-15", Time: "18:00" }}) {{ Event_id Name Date }} }}
-- "RSVP to event E1001 for 2 people" -> mutation {{ createReservation(input: {{ Event_id: "E1001", Number_of_attendees: 2 }}) {{ Reservation_id Event_id }} }}
+- "Create event Tech Talk on 2025-12-15 at 18:00 in Kansas City" -> mutation {{ createEvent(input: {{ Name: "Tech Talk", Location: "Kansas City", Date: "2025-12-15", Time: "18:00", Organizer_id: "CURRENT_USER" }}) {{ Event_id Name Date }} }}
+- "RSVP to event E1001 for 2 people" -> mutation {{ createReservation(input: {{ Event_id: "E1001", Alumni_id: "CURRENT_USER", Number_of_attendees: 2, Payment_status: "Pending" }}) {{ Reservation_id Event_id }} }}
+
+Note: Use "CURRENT_USER" as placeholder for Organizer_id and Alumni_id - the system will inject the actual logged-in user's ID
 """
 
 # Create prompt template

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { useLazyQuery } from '@apollo/client';
+import { useApolloClient } from '@apollo/client';
 import axios from 'axios';
+import { useAuth } from '../context/AuthContext';
 import {
   Box,
   Paper,
@@ -24,25 +25,30 @@ const ChatInterface = () => {
   const [query, setQuery] = useState('');
   const [chatHistory, setChatHistory] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const [executeQuery] = useLazyQuery(gql`query { __typename }`, {
-    fetchPolicy: 'network-only'
-  });
+  const apolloClient = useApolloClient();
+  const { user } = useAuth();
 
   const renderTable = (data) => {
     if (!data) return null;
     
-    // Get the first key (the query name)
+    // Get the first key (the query/mutation name)
     const queryKey = Object.keys(data)[0];
     const results = data[queryKey];
     
-    if (!results || results.length === 0) {
+    if (!results) {
+      return <Typography>No results found</Typography>;
+    }
+    
+    // Handle single object (mutations often return single item)
+    const resultsArray = Array.isArray(results) ? results : [results];
+    
+    if (resultsArray.length === 0) {
       return <Typography>No results found</Typography>;
     }
     
     // Get column headers from first item, exclude __typename and objects
-    const columns = Object.keys(results[0]).filter(key => 
-      key !== '__typename' && typeof results[0][key] !== 'object'
+    const columns = Object.keys(resultsArray[0]).filter(key => 
+      key !== '__typename' && typeof resultsArray[0][key] !== 'object'
     );
     
     return (
@@ -56,7 +62,7 @@ const ChatInterface = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {results.map((row, idx) => (
+            {resultsArray.map((row, idx) => (
               <TableRow key={idx}>
                 {columns.map(col => (
                   <TableCell key={col}>{String(row[col] || 'N/A')}</TableCell>
@@ -110,12 +116,29 @@ const ChatInterface = () => {
         timestamp: new Date()
       }]);
 
-      // Execute GraphQL query
+      // Execute GraphQL query or mutation
       try {
         // Remove all newlines and extra whitespace
-        const cleanQuery = graphql_query.replace(/\s+/g, ' ').trim();
+        let cleanQuery = graphql_query.replace(/\s+/g, ' ').trim();
+        
+        // Inject user's Alumni_id for event creation and reservations
+        if (user && user.Alumni_id) {
+          cleanQuery = cleanQuery.replace(/"CURRENT_USER"/g, `"${user.Alumni_id}"`);
+          cleanQuery = cleanQuery.replace(/Organizer_id:\s*"[^"]*"/g, `Organizer_id: "${user.Alumni_id}"`);
+          cleanQuery = cleanQuery.replace(/Alumni_id:\s*"[^"]*"/g, `Alumni_id: "${user.Alumni_id}"`);
+        }
+        
         const dynamicQuery = gql`${cleanQuery}`;
-        const result = await executeQuery({ query: dynamicQuery });
+        
+        // Determine if it's a query or mutation
+        const isMutation = cleanQuery.toLowerCase().startsWith('mutation');
+        
+        let result;
+        if (isMutation) {
+          result = await apolloClient.mutate({ mutation: dynamicQuery });
+        } else {
+          result = await apolloClient.query({ query: dynamicQuery, fetchPolicy: 'network-only' });
+        }
 
         // Add results
         setChatHistory(prev => [...prev, {
