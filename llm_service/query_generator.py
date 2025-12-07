@@ -99,18 +99,31 @@ def clean_graphql_response(response):
     response = re.sub(r'```\s*', '', response)
     response = response.strip()
     
-    # If response starts with query/mutation, use it as-is
+    # Clean up whitespace
+    response = re.sub(r'\s+', ' ', response)
+    
+    # If response starts with query/mutation, validate and return
     if response.lower().startswith(('query', 'mutation')):
-        # Clean up excessive whitespace but preserve structure
-        query = re.sub(r'\s+', ' ', response)
-        return query.strip()
+        # Count braces to ensure they're balanced
+        open_braces = response.count('{')
+        close_braces = response.count('}')
+        
+        # Add missing closing braces
+        if open_braces > close_braces:
+            response += ' }' * (open_braces - close_braces)
+        
+        return response.strip()
     
     # Try to find query or mutation block
-    match = re.search(r'(query|mutation)\s*\{.+\}', response, re.DOTALL | re.IGNORECASE)
+    match = re.search(r'(query|mutation)\s*\{.+', response, re.DOTALL | re.IGNORECASE)
     
     if match:
         query = match.group(0)
-        query = re.sub(r'\s+', ' ', query)
+        # Balance braces
+        open_braces = query.count('{')
+        close_braces = query.count('}')
+        if open_braces > close_braces:
+            query += ' }' * (open_braces - close_braces)
         return query.strip()
     
     # Last resort: wrap in query
