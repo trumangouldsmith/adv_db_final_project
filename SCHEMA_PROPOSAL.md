@@ -233,17 +233,6 @@ Stores administrator credentials and permissions for system management.
 - **Payment_status**: ["Paid", "Pending", "Refunded", "Cancelled"]
 - **Admin.Role**: ["Super Admin", "Admin", "Moderator"]
 
----
-
-## Schema Decisions (Approved)
-
-1. **Custom IDs**: Auto-generated and auto-incremented (A1001, E1001, R1001, P1001, AD1001)
-2. **File Storage**: GridFS (photos stored in MongoDB Atlas)
-3. **Additional Fields**: None needed
-4. **Employment History Location**: Included and uniform across schemas
-5. **Photo File Metadata**: Included (File_name, File_size, Mime_type)
-6. **Alumni Authentication**: Password field added (bcrypt hashed)
-
 ## Implementation Notes
 
 ### Auto-Increment IDs

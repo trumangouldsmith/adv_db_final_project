@@ -1,8 +1,0 @@
-CREATE A FILE NAMED ".env" IN THIS DIRECTORY WITH THE FOLLOWING CONTENT:
-
-MONGODB_URI=mongodb+srv://clp_admin:clpdbadmin123@clpalumnicluster.3lm7phl.mongodb.net/clp_alumni?retryWrites=true&w=majority&appName=CLPAlumniCluster
-JWT_SECRET=clp_jwt_secret_key_change_in_production_2024
-PORT=4000
-NODE_ENV=development
-MAX_FILE_SIZE=16777216
-
