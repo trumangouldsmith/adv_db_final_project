@@ -15,16 +15,24 @@ import AlumniDirectory from './pages/AlumniDirectory';
 import AlumniProfile from './pages/AlumniProfile';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
-import Photos from './pages/Photos';
 import AdminPanel from './pages/AdminPanel';
 
 const theme = createTheme({
   palette: {
+    mode: 'dark',
     primary: {
-      main: '#1976d2',
+      main: '#F1B82D', // Gold
     },
     secondary: {
-      main: '#dc004e',
+      main: '#000000', // Black
+    },
+    background: {
+      default: '#000000',
+      paper: '#1a1a1a',
+    },
+    text: {
+      primary: '#F1B82D',
+      secondary: '#FFFFFF',
     },
   },
 });
@@ -84,15 +92,6 @@ function App() {
           element={
             <ProtectedRoute>
               <EventDetail />
-            </ProtectedRoute>
-          }
-        />
-        
-        <Route
-          path="/photos"
-          element={
-            <ProtectedRoute>
-              <Photos />
             </ProtectedRoute>
           }
         />

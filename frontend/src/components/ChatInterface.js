@@ -9,8 +9,13 @@ import {
   Typography,
   CircularProgress,
   Chip,
-  Divider,
-  Alert
+  Alert,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import { gql } from '@apollo/client';
@@ -23,6 +28,44 @@ const ChatInterface = () => {
   const [executeQuery] = useLazyQuery(gql`query { __typename }`, {
     fetchPolicy: 'network-only'
   });
+
+  const renderTable = (data) => {
+    if (!data) return null;
+    
+    // Get the first key (the query name)
+    const queryKey = Object.keys(data)[0];
+    const results = data[queryKey];
+    
+    if (!results || results.length === 0) {
+      return <Typography>No results found</Typography>;
+    }
+    
+    // Get column headers from first item
+    const columns = Object.keys(results[0]).filter(key => typeof results[0][key] !== 'object');
+    
+    return (
+      <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
+        <Table size="small" stickyHeader>
+          <TableHead>
+            <TableRow>
+              {columns.map(col => (
+                <TableCell key={col} sx={{ fontWeight: 'bold' }}>{col}</TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {results.map((row, idx) => (
+              <TableRow key={idx}>
+                {columns.map(col => (
+                  <TableCell key={col}>{String(row[col] || 'N/A')}</TableCell>
+                ))}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    );
+  };
 
   const handleSendQuery = async () => {
     if (!query.trim()) return;
@@ -123,11 +166,9 @@ const ChatInterface = () => {
             {message.type === 'result' && (
               <Box sx={{ mb: 1 }}>
                 <Chip label="Results" size="small" color="success" sx={{ mb: 1 }} />
-                <Paper sx={{ p: 2, bgcolor: 'success.light' }}>
-                  <Typography variant="body2" component="pre" sx={{ fontFamily: 'monospace', whiteSpace: 'pre-wrap' }}>
-                    {JSON.stringify(message.content, null, 2)}
-                  </Typography>
-                </Paper>
+                <Box sx={{ mt: 1 }}>
+                  {renderTable(message.content)}
+                </Box>
               </Box>
             )}
 

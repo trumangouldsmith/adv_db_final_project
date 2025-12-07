@@ -30,9 +30,6 @@ const Navbar = () => {
             <Button color="inherit" component={Link} to="/events">
               Events
             </Button>
-            <Button color="inherit" component={Link} to="/photos">
-              Photos
-            </Button>
             {isAdmin() && (
               <Button color="inherit" component={Link} to="/admin">
                 Admin
