@@ -56,7 +56,9 @@ const ChatInterface = () => {
 
       // Execute GraphQL query
       try {
-        const dynamicQuery = gql`${graphql_query}`;
+        // Remove all newlines and extra whitespace
+        const cleanQuery = graphql_query.replace(/\s+/g, ' ').trim();
+        const dynamicQuery = gql`${cleanQuery}`;
         const result = await executeQuery({ query: dynamicQuery });
 
         // Add results
