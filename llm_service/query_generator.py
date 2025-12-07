@@ -1,5 +1,5 @@
 from langchain_ollama.llms import OllamaLLM
-from langchain.prompts import PromptTemplate
+from langchain_core.prompts import PromptTemplate
 import re
 import os
 
@@ -11,7 +11,7 @@ SCHEMA_CONTEXT = """
 You are an expert GraphQL query generator for the CLP Alumni Directory system.
 
 Available Types:
-1. Alumni: _id, Alumni_id, Name, Email, Graduation_year, Field_of_study[], Employer, Employment_title, Employer_location{City, State}, Employment_status, Phone, Address
+1. Alumni: _id, Alumni_id, Name, Email, Graduation_year, Field_of_study[], Employer, Employment_title, Employer_location (City, State), Employment_status, Phone, Address
 2. Event: _id, Event_id, Name, Description, Location, Date, Time, Capacity, Organizer_id
 3. Reservation: _id, Reservation_id, Alumni_id, Event_id, Number_of_attendees, Payment_amount, Payment_status
 4. Photo: _id, Photo_id, File_id, File_name, Alumni_id, Event_id, Tags[]
@@ -51,10 +51,15 @@ Available Mutations:
 
 IMPORTANT RULES:
 1. Return ONLY the GraphQL query, no explanations
-2. Use proper GraphQL syntax
+2. Use proper GraphQL syntax with opening query or mutation keyword
 3. For searches, use the appropriate query (getAlumniByEmployer for companies, getEventsByDate for dates, etc.)
 4. Always request relevant fields in the response
 5. Use proper input types for mutations
+
+Examples:
+- "Find alumni at Google" -> query {{ getAlumniByEmployer(Employer: "Google") {{ Name Email Employment_title }} }}
+- "Show all events" -> query {{ getEvents {{ Name Date Location }} }}
+- "Get all photos" -> query {{ getPhotos {{ Photo_id File_name Tags }} }}
 """
 
 # Create prompt template
@@ -92,18 +97,24 @@ def clean_graphql_response(response):
     # Remove any markdown code blocks
     response = re.sub(r'```graphql\s*', '', response)
     response = re.sub(r'```\s*', '', response)
+    response = response.strip()
     
-    # Find query or mutation block
-    match = re.search(r'(query|mutation)\s*\{[^}]*\{[^}]*\}[^}]*\}', response, re.DOTALL | re.IGNORECASE)
+    # If response starts with query/mutation, use it as-is
+    if response.lower().startswith(('query', 'mutation')):
+        # Clean up excessive whitespace but preserve structure
+        query = re.sub(r'\s+', ' ', response)
+        return query.strip()
+    
+    # Try to find query or mutation block
+    match = re.search(r'(query|mutation)\s*\{.+\}', response, re.DOTALL | re.IGNORECASE)
     
     if match:
         query = match.group(0)
-        # Clean up whitespace
-        query = ' '.join(query.split())
-        return query
+        query = re.sub(r'\s+', ' ', query)
+        return query.strip()
     
-    # If no match, return the response as-is (might be a simple query)
-    return response.strip()
+    # Last resort: wrap in query
+    return f"query {{ {response.strip()} }}"
 
 # Test function
 if __name__ == '__main__':
