@@ -40,8 +40,10 @@ const ChatInterface = () => {
       return <Typography>No results found</Typography>;
     }
     
-    // Get column headers from first item
-    const columns = Object.keys(results[0]).filter(key => typeof results[0][key] !== 'object');
+    // Get column headers from first item, exclude __typename and objects
+    const columns = Object.keys(results[0]).filter(key => 
+      key !== '__typename' && typeof results[0][key] !== 'object'
+    );
     
     return (
       <TableContainer component={Paper} sx={{ maxHeight: 400 }}>
@@ -89,6 +91,17 @@ const ChatInterface = () => {
       );
 
       const { graphql_query } = llmResponse.data;
+
+      // Check if LLM is asking for more information
+      if (graphql_query.startsWith('NEED_INFO:')) {
+        const message = graphql_query.replace('NEED_INFO:', '').trim();
+        setChatHistory(prev => [...prev, {
+          type: 'assistant',
+          content: message,
+          timestamp: new Date()
+        }]);
+        return;
+      }
 
       // Add LLM response
       setChatHistory(prev => [...prev, {
@@ -152,6 +165,14 @@ const ChatInterface = () => {
               </Box>
             )}
 
+            {message.type === 'assistant' && (
+              <Box sx={{ display: 'flex', justifyContent: 'flex-start' }}>
+                <Paper sx={{ p: 2, maxWidth: '70%', bgcolor: '#2a2a2a' }}>
+                  <Typography sx={{ color: '#F1B82D' }}>{message.content}</Typography>
+                </Paper>
+              </Box>
+            )}
+
             {message.type === 'llm' && (
               <Box sx={{ mb: 1 }}>
                 <Chip label="Generated GraphQL Query" size="small" sx={{ mb: 1 }} />
@@ -191,7 +212,7 @@ const ChatInterface = () => {
         <TextField
           fullWidth
           variant="outlined"
-          placeholder="Ask about alumni, events, or photos..."
+          placeholder="Ask about alumni and events..."
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && handleSendQuery()}

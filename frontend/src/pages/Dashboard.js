@@ -46,7 +46,7 @@ const Dashboard = () => {
               AI Assistant
             </Typography>
             <Typography variant="body2" color="text.secondary" gutterBottom>
-              Ask questions about alumni, events, and photos in natural language
+              Ask questions about alumni and events in natural language
             </Typography>
             <Box sx={{ mt: 2 }}>
               <ChatInterface />

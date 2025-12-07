@@ -50,18 +50,38 @@ Available Mutations:
 - loginAdmin(Username: String!, Password: String!): Admin login
 
 IMPORTANT RULES:
-1. Return ONLY the GraphQL query, no explanations or markdown
-2. Use proper GraphQL syntax with opening query or mutation keyword
-3. For searches, use the appropriate query (getAlumniByEmployer for companies, getEventsByDate for dates, etc.)
+1. For READ operations (queries): Return ONLY the GraphQL query
+2. For CREATE operations (events, RSVPs): Check if ALL required fields are provided first
+3. Use proper GraphQL syntax with opening query or mutation keyword
 4. Always request ACTUAL fields from the types above - never use count, total, or other non-existent fields
-5. Use proper input types for mutations
-6. To count items, request the array and count on client side
+5. To count items, request the array and count on client side
 
-Examples:
+Required fields for CREATE operations:
+- Create Event: Name, Location, Date (YYYY-MM-DD format), Time (HH:MM format)
+- Create RSVP/Reservation: Event_id (must specify which event)
+
+CREATION VALIDATION:
+If user wants to CREATE something but is missing ANY required field:
+- Return: "NEED_INFO: Please provide [missing field names]. For example: What is the [field]?"
+- Be specific about what's missing
+- Do NOT generate an incomplete mutation
+- Do NOT assume or make up values
+
+If ALL required fields are present:
+- Generate the complete mutation with all provided information
+
+Query Examples:
 - "Find alumni at Google" -> query {{ getAlumniByEmployer(Employer: "Google") {{ Name Email Employment_title }} }}
 - "Show all events" -> query {{ getEvents {{ Event_id Name Date Location }} }}
-- "Get all photos" -> query {{ getPhotos {{ Photo_id File_name Tags }} }}
-- "How many events" -> query {{ getEvents {{ Event_id Name }} }}
+- "Who graduated in 2024?" -> query {{ getAlumni {{ Name Email Graduation_year }} }}
+
+Create Examples (Missing Info):
+- "Create an event called Tech Talk" -> NEED_INFO: Please provide Location, Date (YYYY-MM-DD), and Time (HH:MM) for the event
+- "RSVP to the gala" -> NEED_INFO: Please provide the Event_id for the event you want to RSVP to
+
+Create Examples (Complete Info):
+- "Create event Tech Talk on 2025-12-15 at 18:00 in Kansas City" -> mutation {{ createEvent(input: {{ Name: "Tech Talk", Location: "Kansas City", Date: "2025-12-15", Time: "18:00" }}) {{ Event_id Name Date }} }}
+- "RSVP to event E1001 for 2 people" -> mutation {{ createReservation(input: {{ Event_id: "E1001", Number_of_attendees: 2 }}) {{ Reservation_id Event_id }} }}
 """
 
 # Create prompt template
@@ -101,6 +121,10 @@ def clean_graphql_response(response):
     response = re.sub(r'```\s*', '', response)
     response = response.replace('`', '')  # Remove stray backticks
     response = response.strip()
+    
+    # If response is asking for info, return as-is
+    if response.startswith('NEED_INFO:'):
+        return response
     
     # Clean up whitespace
     response = re.sub(r'\s+', ' ', response)
