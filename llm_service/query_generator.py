@@ -50,16 +50,18 @@ Available Mutations:
 - loginAdmin(Username: String!, Password: String!): Admin login
 
 IMPORTANT RULES:
-1. Return ONLY the GraphQL query, no explanations
+1. Return ONLY the GraphQL query, no explanations or markdown
 2. Use proper GraphQL syntax with opening query or mutation keyword
 3. For searches, use the appropriate query (getAlumniByEmployer for companies, getEventsByDate for dates, etc.)
-4. Always request relevant fields in the response
+4. Always request ACTUAL fields from the types above - never use count, total, or other non-existent fields
 5. Use proper input types for mutations
+6. To count items, request the array and count on client side
 
 Examples:
 - "Find alumni at Google" -> query {{ getAlumniByEmployer(Employer: "Google") {{ Name Email Employment_title }} }}
-- "Show all events" -> query {{ getEvents {{ Name Date Location }} }}
+- "Show all events" -> query {{ getEvents {{ Event_id Name Date Location }} }}
 - "Get all photos" -> query {{ getPhotos {{ Photo_id File_name Tags }} }}
+- "How many events" -> query {{ getEvents {{ Event_id Name }} }}
 """
 
 # Create prompt template
@@ -94,9 +96,10 @@ def clean_graphql_response(response):
     """
     Extract and clean the GraphQL query from LLM response
     """
-    # Remove any markdown code blocks
+    # Remove any markdown code blocks and backticks
     response = re.sub(r'```graphql\s*', '', response)
     response = re.sub(r'```\s*', '', response)
+    response = response.replace('`', '')  # Remove stray backticks
     response = response.strip()
     
     # Clean up whitespace
