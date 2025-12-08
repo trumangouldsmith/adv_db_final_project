@@ -90,22 +90,26 @@ const ChatInterface = () => {
     }]);
 
     try {
-      // Call LLM service
+      // Call LLM service with conversation history
       const llmResponse = await axios.post(
         process.env.REACT_APP_LLM_SERVICE_URI + '/query',
-        { query: userMessage }
+        { 
+          query: userMessage,
+          history: chatHistory
+        }
       );
 
       const { graphql_query } = llmResponse.data;
 
       // Check if LLM is asking for more information
-      if (graphql_query.startsWith('NEED_INFO:')) {
+      if (graphql_query.includes('NEED_INFO:') || graphql_query.includes('Please provide')) {
         const message = graphql_query.replace('NEED_INFO:', '').trim();
         setChatHistory(prev => [...prev, {
           type: 'assistant',
           content: message,
           timestamp: new Date()
         }]);
+        setLoading(false);
         return;
       }
 

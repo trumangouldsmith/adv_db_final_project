@@ -14,11 +14,12 @@ def process_query():
     try:
         data = request.json
         natural_language_query = data.get('query', '')
+        conversation_history = data.get('history', [])
         
         if not natural_language_query:
             return jsonify({'error': 'No query provided'}), 400
         
-        graphql_query = generate_graphql_query(natural_language_query)
+        graphql_query = generate_graphql_query(natural_language_query, conversation_history)
         
         return jsonify({
             'success': True,
@@ -27,6 +28,9 @@ def process_query():
         })
     
     except Exception as e:
+        print(f"ERROR: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({
             'success': False,
             'error': str(e)

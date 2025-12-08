@@ -50,29 +50,32 @@ Available Mutations:
 - loginAdmin(Username: String!, Password: String!): Admin login
 
 IMPORTANT RULES:
-1. For READ operations (queries): Return ONLY the GraphQL query
-2. For CREATE operations (events, RSVPs): Check if ALL required fields are provided first
-3. Use proper GraphQL syntax - NO escaped quotes, use raw strings
-4. Always request ACTUAL fields from the types above - never use count, total, or other non-existent fields
-5. Accept "virtual", "online", "virtual event" as valid locations
+1. CAREFULLY READ the ENTIRE user message and extract ALL information mentioned
+2. For CREATE operations: Extract Name, Location, Date, Time from the FULL user message
+3. Convert times: 6pm->18:00, 2pm->14:00, etc.
+4. Accept "online", "virtual", "virtual event", "zoom" as Location: "Virtual"
+5. Convert date formats: "December 8th 2025" -> "2025-12-08", "Dec 8" -> "2025-12-08"
+6. Use ONLY fields that exist in the schema
+7. NO escaped quotes in output
 
-Required fields for CREATE operations:
-- Create Event: Name, Location (can be city/state OR "Virtual"), Date (YYYY-MM-DD), Time (HH:MM 24-hour format)
-- Create RSVP: Event_id (like E1001)
+Required fields for CREATE Event:
+- Name (extract from user message)
+- Location (Virtual OR city/state - extract from user message)
+- Date (YYYY-MM-DD - extract and convert from user message)
+- Time (HH:MM 24-hour - extract and convert from user message, use start time if range given)
 
 CREATION VALIDATION:
-If user wants to CREATE but missing required fields:
-- Return EXACTLY: NEED_INFO: Please provide [list missing fields]
-- Keep it SHORT - no examples, no extra text
-- Do NOT wrap in query or mutation blocks
-- Do NOT generate incomplete mutations
+Parse the ENTIRE user message first. Look for:
+- Event name (after "called", "named", or implied)
+- Location keywords (virtual, online, city names, states)
+- Date mentions (December 8, Dec 8th, 2025-12-08)
+- Time mentions (6pm, 18:00, "from X to Y")
 
-If ALL required fields present:
-- Generate the complete mutation
-- Use Organizer_id: "CURRENT_USER" for events
-- Use Alumni_id: "CURRENT_USER" for RSVPs
-- Convert times: 6pm -> 18:00, 8pm -> 20:00
-- Use proper GraphQL syntax with NO escaped quotes
+Only return NEED_INFO if information is truly missing after parsing the full message.
+
+If ALL info found in message:
+- Generate mutation with Organizer_id: "CURRENT_USER"
+- Use start time if time range given (6pm-8pm -> use 18:00)
 
 Query Examples:
 - "Find alumni at Google" -> query {{ getAlumniByEmployer(Employer: "Google") {{ Name Email Employment_title }} }}
@@ -84,8 +87,8 @@ Create Examples - Missing Info:
 - "RSVP to the gala" -> NEED_INFO: Please provide Event_id
 
 Create Examples - Complete Info:
-- "Create event Tech Talk on 2025-12-15 at 6pm in Kansas City" -> mutation {{ createEvent(input: {{ Name: "Tech Talk", Location: "Kansas City", Date: "2025-12-15", Time: "18:00", Organizer_id: "CURRENT_USER" }}) {{ Event_id Name Date }} }}
-- "Create virtual event Code Review on 2025-12-20 at 2pm" -> mutation {{ createEvent(input: {{ Name: "Code Review", Location: "Virtual", Date: "2025-12-20", Time: "14:00", Organizer_id: "CURRENT_USER" }}) {{ Event_id Name }} }}
+- "Create event Tech Talk on 2025-12-15 at 6pm in Kansas City" -> mutation {{ createEvent(input: {{ Name: "Tech Talk", Location: "Kansas City", Date: "2025-12-15", Time: "18:00", Organizer_id: "CURRENT_USER", Capacity: null }}) {{ Event_id Name Date }} }}
+- "It's online, on December 8th, 2025, and is from 6pm to 8pm. It has a max capacity of 25 people" with previous context of name "Tech Deep Dive" -> mutation {{ createEvent(input: {{ Name: "Tech Deep Dive", Location: "Virtual", Date: "2025-12-08", Time: "18:00", Organizer_id: "CURRENT_USER", Capacity: 25 }}) {{ Event_id Name Date Time }} }}
 - "RSVP to event E1001 for 2 people" -> mutation {{ createReservation(input: {{ Event_id: "E1001", Alumni_id: "CURRENT_USER", Number_of_attendees: 2, Payment_status: "Pending" }}) {{ Reservation_id Event_id }} }}
 """
 
@@ -104,17 +107,33 @@ DO NOT add explanations, examples, or extra text. ONLY return the query or NEED_
 """
 )
 
-def generate_graphql_query(natural_language_query):
+def generate_graphql_query(natural_language_query, conversation_history=None):
     """
     Convert natural language query to GraphQL using LLM
     """
     try:
+        # Build context from conversation history
+        context = natural_language_query
+        if conversation_history and len(conversation_history) > 0:
+            # Get last few user messages to build context
+            recent_messages = []
+            for msg in conversation_history[-6:]:  # Last 3 exchanges
+                if msg.get('type') == 'user':
+                    recent_messages.append(msg.get('content', ''))
+            
+            if recent_messages:
+                context = ' '.join(recent_messages) + ' ' + natural_language_query
+        
         # Generate query using LLM
         chain = prompt_template | llm
-        response = chain.invoke({"query": natural_language_query})
+        response = chain.invoke({"query": context})
+        
+        print(f"RAW LLM OUTPUT: {response}")
         
         # Clean up response
         graphql_query = clean_graphql_response(response)
+        
+        print(f"CLEANED LLM OUTPUT: {graphql_query}")
         
         return graphql_query
     
