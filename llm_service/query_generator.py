@@ -49,46 +49,66 @@ Available Mutations:
 - loginAlumni(Email: String!, Password: String!): Alumni login
 - loginAdmin(Username: String!, Password: String!): Admin login
 
-IMPORTANT RULES:
-1. CAREFULLY READ the ENTIRE user message and extract ALL information mentioned
-2. For CREATE operations: Extract Name, Location, Date, Time from the FULL user message
-3. Convert times: 6pm->18:00, 2pm->14:00, etc.
-4. Accept "online", "virtual", "virtual event", "zoom" as Location: "Virtual"
-5. Convert date formats: "December 8th 2025" -> "2025-12-08", "Dec 8" -> "2025-12-08"
-6. Use ONLY fields that exist in the schema
-7. NO escaped quotes in output
+CRITICAL EXTRACTION RULES:
+1. Read the COMPLETE user message - it may contain multiple sentences with all needed info
+2. For "Create event" operations, you need these 4 fields ONLY:
+   - Name: Look for event name after "called", "named", or in quotes
+   - Location: City/State OR "Virtual" (accept: online, virtual, zoom as "Virtual")
+   - Date: Format as YYYY-MM-DD (convert "December 20th 2025" to "2025-12-20")
+   - Time: Format as HH:MM in 24-hour (convert "6pm" to "18:00", "6:00 pm" to "18:00")
+3. Capacity is OPTIONAL - only include if mentioned
+4. DO NOT ask for fields that don't exist (Email, Event_id, Admin, Employer_location are NOT event fields)
+5. DO NOT confuse event creation with RSVP/reservation creation
 
-Required fields for CREATE Event:
-- Name (extract from user message)
-- Location (Virtual OR city/state - extract from user message)
-- Date (YYYY-MM-DD - extract and convert from user message)
-- Time (HH:MM 24-hour - extract and convert from user message, use start time if range given)
+STEP-BY-STEP PROCESS:
+Step 1: Determine operation type
+- If user says "create event" or "new event" -> createEvent mutation
+- If user says "RSVP" or "register for event" -> createReservation mutation
+- Otherwise -> query operation
 
-CREATION VALIDATION:
-Parse the ENTIRE user message first. Look for:
-- Event name (after "called", "named", or implied)
-- Location keywords (virtual, online, city names, states)
-- Date mentions (December 8, Dec 8th, 2025-12-08)
-- Time mentions (6pm, 18:00, "from X to Y")
+Step 2: Extract information from THE ENTIRE MESSAGE
+- Scan all sentences for Name, Location, Date, Time
+- Location examples: "UNION KC MO" = "UNION", "online" = "Virtual", "Kansas City" = "Kansas City"
+- Date examples: "December 20th, 2025" = "2025-12-20", "Dec 20" = "2025-12-20"
+- Time examples: "6:00 pm" = "18:00", "6pm" = "18:00", "18:00" = "18:00"
 
-Only return NEED_INFO if information is truly missing after parsing the full message.
+Step 3: Check if you have ALL required fields
+- For createEvent: Name, Location, Date, Time
+- If missing ANY: return "NEED_INFO: Please provide [missing fields]"
+- If have ALL: generate the mutation
 
-If ALL info found in message:
-- Generate mutation with Organizer_id: "CURRENT_USER"
-- Use start time if time range given (6pm-8pm -> use 18:00)
+Step 4: Generate mutation
+- Use Organizer_id: "CURRENT_USER" for events
+- Use Alumni_id: "CURRENT_USER" for reservations
+- Only include Capacity if user mentioned it
 
 Query Examples:
 - "Find alumni at Google" -> query {{ getAlumniByEmployer(Employer: "Google") {{ Name Email Employment_title }} }}
 - "Show all events" -> query {{ getEvents {{ Event_id Name Date Location }} }}
 - "Who graduated in 2024?" -> query {{ getAlumni {{ Name Email Graduation_year }} }}
 
-Create Examples - Missing Info:
-- "Create an event called Tech Talk" -> NEED_INFO: Please provide Location, Date, and Time
-- "RSVP to the gala" -> NEED_INFO: Please provide Event_id
+CREATE EVENT EXAMPLES:
 
-Create Examples - Complete Info:
-- "Create event Tech Talk on 2025-12-15 at 6pm in Kansas City" -> mutation {{ createEvent(input: {{ Name: "Tech Talk", Location: "Kansas City", Date: "2025-12-15", Time: "18:00", Organizer_id: "CURRENT_USER", Capacity: null }}) {{ Event_id Name Date }} }}
-- "It's online, on December 8th, 2025, and is from 6pm to 8pm. It has a max capacity of 25 people" with previous context of name "Tech Deep Dive" -> mutation {{ createEvent(input: {{ Name: "Tech Deep Dive", Location: "Virtual", Date: "2025-12-08", Time: "18:00", Organizer_id: "CURRENT_USER", Capacity: 25 }}) {{ Event_id Name Date Time }} }}
+Example 1 - Missing info:
+Input: "Create an event called Tech Talk"
+Output: NEED_INFO: Please provide Location, Date, and Time
+
+Example 2 - Complete (single sentence):
+Input: "Create event Tech Talk on 2025-12-15 at 6pm in Kansas City"
+Output: mutation {{ createEvent(input: {{ Name: "Tech Talk", Location: "Kansas City", Date: "2025-12-15", Time: "18:00", Organizer_id: "CURRENT_USER" }}) {{ Event_id Name Date }} }}
+
+Example 3 - Complete (with context from previous messages):
+User said earlier: "Create Winter Alumni Reception event"
+Then user said: "UNION KC MO is the location, its on December 20th, 2025, and its at 6:00 pm"
+Combined context: "Create Winter Alumni Reception event UNION KC MO is the location, its on December 20th, 2025, and its at 6:00 pm"
+Extracted: Name="Winter Alumni Reception", Location="UNION", Date="2025-12-20", Time="18:00"
+Output: mutation {{ createEvent(input: {{ Name: "Winter Alumni Reception", Location: "UNION", Date: "2025-12-20", Time: "18:00", Organizer_id: "CURRENT_USER" }}) {{ Event_id Name Date }} }}
+
+Example 4 - Complete with capacity:
+Input: "Create virtual event Code Review on 2025-12-08 at 6pm with 25 capacity"
+Output: mutation {{ createEvent(input: {{ Name: "Code Review", Location: "Virtual", Date: "2025-12-08", Time: "18:00", Organizer_id: "CURRENT_USER", Capacity: 25 }}) {{ Event_id Name }} }}
+
+RSVP EXAMPLES:
 - "RSVP to event E1001 for 2 people" -> mutation {{ createReservation(input: {{ Event_id: "E1001", Alumni_id: "CURRENT_USER", Number_of_attendees: 2, Payment_status: "Pending" }}) {{ Reservation_id Event_id }} }}
 """
 
@@ -97,13 +117,19 @@ prompt_template = PromptTemplate(
     input_variables=["query"],
     template=SCHEMA_CONTEXT + """
 
-User Query: {query}
+User's Complete Message (may include context from previous messages): {query}
 
-CRITICAL: Return ONLY one of these formats:
-1. If missing required fields for CREATE: NEED_INFO: Please provide [field1, field2]
-2. If all info present: The GraphQL query or mutation
+TASK:
+1. Read the ENTIRE message above carefully
+2. Extract ALL information present (Name, Location, Date, Time, etc.)
+3. If creating event and have all 4 required fields (Name, Location, Date, Time): generate createEvent mutation
+4. If missing required fields: return "NEED_INFO: Please provide [missing fields]"
+5. For queries (not creating): generate appropriate query
 
-DO NOT add explanations, examples, or extra text. ONLY return the query or NEED_INFO message.
+OUTPUT FORMAT:
+- Return ONLY the GraphQL query/mutation OR "NEED_INFO: [message]"
+- NO explanations, NO extra text, NO markdown
+- Use exact GraphQL syntax from examples above
 """
 )
 
@@ -123,6 +149,10 @@ def generate_graphql_query(natural_language_query, conversation_history=None):
             
             if recent_messages:
                 context = ' '.join(recent_messages) + ' ' + natural_language_query
+        
+        print(f"\n=== CONTEXT SENT TO LLM ===")
+        print(f"{context}")
+        print(f"=== END CONTEXT ===\n")
         
         # Generate query using LLM
         chain = prompt_template | llm
