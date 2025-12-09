@@ -553,7 +553,7 @@ query {
 **Test Query 3: Search Alumni by Employer**
 ```graphql
 query {
-  getAlumniByEmployer(employer: "Google") {
+  getAlumniByEmployer(Employer: "Google") {
     Name
     Employment_title
     Email
