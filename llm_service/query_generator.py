@@ -86,6 +86,14 @@ Query Examples:
 - "Find alumni at Google" -> query {{ getAlumniByEmployer(Employer: "Google") {{ Name Email Employment_title }} }}
 - "Show all events" -> query {{ getEvents {{ Event_id Name Date Location }} }}
 - "Who graduated in 2024?" -> query {{ getAlumni {{ Name Email Graduation_year }} }}
+- "Find alumni named John Smith" -> query {{ getAlumni {{ Name Email Graduation_year }} }}
+- "Show all events happening on 2025-12-20" -> query {{ getEventsByDate(Date: "2025-12-20") {{ Event_id Name Date Location }} }}
+- "Get alumni who work at Microsoft" -> query {{ getAlumniByEmployer(Employer: "Microsoft") {{ Name Email Employment_title }} }}
+- "Retrieve event with id EV2001" -> query {{ getEventByEventId(Event_id: "EV2001") {{ Name Date Location }} }}
+- "List all reservations for alumni A1004" -> query {{ getReservationsByAlumni(Alumni_id: "A1004") {{ Reservation_id Event_id Number_of_attendees }} }}
+- "Show all photos tagged reunion" -> query {{ getPhotosByTags(Tags: ["reunion"]) {{ Photo_id File_name }} }}
+- "Get all admins" -> query {{ getAdmins {{ Admin_id Username Role Email }} }}
+- "Get all photos for event EV3002" -> query {{ getPhotosByEvent(Event_id: "EV3002") {{ Photo_id File_name Tags }} }}
 
 CREATE EVENT EXAMPLES:
 
@@ -108,8 +116,22 @@ Example 4 - Complete with capacity:
 Input: "Create virtual event Code Review on 2025-12-08 at 6pm with 25 capacity"
 Output: mutation {{ createEvent(input: {{ Name: "Code Review", Location: "Virtual", Date: "2025-12-08", Time: "18:00", Organizer_id: "CURRENT_USER", Capacity: 25 }}) {{ Event_id Name }} }}
 
+Example 5 - Create event with city location:
+Input: "Create event called Data Mixer in Boston on Jan 5 2026 at 7pm"
+Output: mutation {{ createEvent(input: {{ Name: "Data Mixer", Location: "Boston", Date: "2026-01-05", Time: "19:00", Organizer_id: "CURRENT_USER" }}) {{ Event_id Name Date }} }}
+
 RSVP EXAMPLES:
 - "RSVP to event E1001 for 2 people" -> mutation {{ createReservation(input: {{ Event_id: "E1001", Alumni_id: "CURRENT_USER", Number_of_attendees: 2, Payment_status: "Pending" }}) {{ Reservation_id Event_id }} }}
+- "RSVP to event EV9001 for 3 people" -> mutation {{ createReservation(input: {{ Event_id: "EV9001", Alumni_id: "CURRENT_USER", Number_of_attendees: 3, Payment_status: "Pending" }}) {{ Reservation_id Event_id }} }}
+
+UPDATE EXAMPLES:
+- "Update alumni with id 65fb11aa to change employer to Amazon" -> mutation {{ updateAlumni(id: "65fb11aa", input: {{ Employer: "Amazon" }}) {{ Alumni_id Name Employer }} }}
+- "Change alumni 65fb11aa employer to Google" -> mutation {{ updateAlumni(id: "65fb11aa", input: {{ Employer: "Google" }}) {{ Alumni_id Name Employer }} }}
+
+DELETE EXAMPLES:
+- "Delete event with Mongo id 65fa22bc" -> mutation {{ deleteEvent(id: "65fa22bc") }}
+- "Remove event 65fa22bc" -> mutation {{ deleteEvent(id: "65fa22bc") }}
+- "Delete alumni with id 65fb11aa" -> mutation {{ deleteAlumni(id: "65fb11aa") }}
 """
 
 # Create prompt template
