@@ -180,6 +180,42 @@ def clean_graphql_response(response):
     response = response.replace('`', '')  # Remove stray backticks
     response = response.strip()
     
+    # Fix common LLM mistakes: convert SCREAMING_SNAKE_CASE to correct camelCase query names
+    query_name_fixes = {
+        r'\bGET_ALUMNI_BY_EMPLOYER\b': 'getAlumniByEmployer',
+        r'\bGET_ALUMNI_BY_ID\b': 'getAlumniById',
+        r'\bGET_ALUMNI_BY_ALUMNI_ID\b': 'getAlumniByAlumniId',
+        r'\bGET_ALUMNI_BY_EMAIL\b': 'getAlumniByEmail',
+        r'\bGET_ALUMNI\b': 'getAlumni',
+        r'\bGET_EVENTS_BY_DATE\b': 'getEventsByDate',
+        r'\bGET_EVENT_BY_ID\b': 'getEventById',
+        r'\bGET_EVENT_BY_EVENT_ID\b': 'getEventByEventId',
+        r'\bGET_EVENTS\b': 'getEvents',
+        r'\bGET_RESERVATIONS_BY_ALUMNI\b': 'getReservationsByAlumni',
+        r'\bGET_RESERVATIONS_BY_EVENT\b': 'getReservationsByEvent',
+        r'\bGET_RESERVATION_BY_ID\b': 'getReservationById',
+        r'\bGET_RESERVATIONS\b': 'getReservations',
+        r'\bGET_PHOTOS_BY_EVENT\b': 'getPhotosByEvent',
+        r'\bGET_PHOTOS_BY_ALUMNI\b': 'getPhotosByAlumni',
+        r'\bGET_PHOTOS_BY_TAGS\b': 'getPhotosByTags',
+        r'\bGET_PHOTO_BY_ID\b': 'getPhotoById',
+        r'\bGET_PHOTOS\b': 'getPhotos',
+        r'\bGET_ADMIN_BY_ID\b': 'getAdminById',
+        r'\bGET_ADMINS\b': 'getAdmins',
+        r'\bCREATE_ALUMNI\b': 'createAlumni',
+        r'\bUPDATE_ALUMNI\b': 'updateAlumni',
+        r'\bDELETE_ALUMNI\b': 'deleteAlumni',
+        r'\bCREATE_EVENT\b': 'createEvent',
+        r'\bUPDATE_EVENT\b': 'updateEvent',
+        r'\bDELETE_EVENT\b': 'deleteEvent',
+        r'\bCREATE_RESERVATION\b': 'createReservation',
+        r'\bUPDATE_RESERVATION\b': 'updateReservation',
+        r'\bDELETE_RESERVATION\b': 'deleteReservation',
+    }
+    
+    for pattern, replacement in query_name_fixes.items():
+        response = re.sub(pattern, replacement, response, flags=re.IGNORECASE)
+    
     # If response is asking for info, extract just the NEED_INFO message
     if 'NEED_INFO' in response.upper() or 'PLEASE PROVIDE' in response.upper():
         # Extract the actual message

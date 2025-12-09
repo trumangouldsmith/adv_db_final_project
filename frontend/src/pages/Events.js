@@ -86,8 +86,28 @@ const Events = () => {
   if (error) return <Typography color="error">Error: {error.message}</Typography>;
 
   const events = data?.getEvents || [];
-  const upcomingEvents = events.filter(e => new Date(e.Date) >= new Date());
-  const pastEvents = events.filter(e => new Date(e.Date) < new Date());
+  
+  // Normalize dates for comparison (compare date parts only, ignore time)
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const upcomingEvents = events
+    .filter(e => {
+      if (!e.Date) return false;
+      const eventDate = new Date(e.Date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate >= today;
+    })
+    .sort((a, b) => new Date(a.Date) - new Date(b.Date)); // Soonest first
+  
+  const pastEvents = events
+    .filter(e => {
+      if (!e.Date) return false;
+      const eventDate = new Date(e.Date);
+      eventDate.setHours(0, 0, 0, 0);
+      return eventDate < today;
+    })
+    .sort((a, b) => new Date(b.Date) - new Date(a.Date)); // Most recent first
 
   return (
     <Container sx={{ mt: 4 }}>
