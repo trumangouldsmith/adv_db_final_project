@@ -7,6 +7,28 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
 const resolvers = {
+  // Field resolvers to ensure dates are properly serialized
+  Event: {
+    Date: (parent) => {
+      if (!parent.Date) return null;
+      return parent.Date instanceof Date 
+        ? parent.Date.toISOString() 
+        : parent.Date;
+    },
+    Created_at: (parent) => {
+      if (!parent.Created_at) return null;
+      return parent.Created_at instanceof Date 
+        ? parent.Created_at.toISOString() 
+        : parent.Created_at;
+    },
+    Updated_at: (parent) => {
+      if (!parent.Updated_at) return null;
+      return parent.Updated_at instanceof Date 
+        ? parent.Updated_at.toISOString() 
+        : parent.Updated_at;
+    },
+  },
+
   Query: {
     // Alumni queries
     async getAlumni() {

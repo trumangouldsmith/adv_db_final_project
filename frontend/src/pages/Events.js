@@ -87,6 +87,10 @@ const Events = () => {
 
   const events = data?.getEvents || [];
   
+  // Debug: log events to console
+  console.log('Total events fetched:', events.length);
+  console.log('Events data:', events);
+  
   // Normalize dates for comparison (compare date parts only, ignore time)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
