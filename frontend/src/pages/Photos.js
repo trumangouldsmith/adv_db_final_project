@@ -240,8 +240,12 @@ const Photos = () => {
                   height="200"
                   image={`${process.env.REACT_APP_PHOTO_URI || 'http://localhost:4000/photo'}/${photo.File_id}`}
                   alt={photo.File_name}
-                  sx={{ objectFit: 'cover', cursor: 'pointer' }}
+                  sx={{ objectFit: 'cover', cursor: 'pointer', bgcolor: 'grey.800' }}
                   onClick={() => setSelectedPhoto(photo)}
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23333" width="200" height="200"/%3E%3Ctext fill="%23666" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Image%3C/text%3E%3C/svg%3E';
+                  }}
                 />
                 <IconButton
                   sx={{
@@ -263,7 +267,9 @@ const Photos = () => {
                   {photo.File_name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" display="block">
-                  {photo.Upload_date ? new Date(photo.Upload_date).toLocaleDateString() : 'Unknown date'}
+                  {photo.Upload_date && !isNaN(new Date(photo.Upload_date).getTime()) 
+                    ? new Date(photo.Upload_date).toLocaleDateString() 
+                    : 'Unknown date'}
                 </Typography>
                 {photo.Event_id && (
                   <Typography variant="caption" color="primary" display="block">

@@ -29,6 +29,31 @@ const resolvers = {
     },
   },
 
+  Photo: {
+    File_id: (parent) => {
+      if (!parent.File_id) return null;
+      return parent.File_id.toString();
+    },
+    Upload_date: (parent) => {
+      if (!parent.Upload_date) return null;
+      return parent.Upload_date instanceof Date 
+        ? parent.Upload_date.toISOString() 
+        : parent.Upload_date;
+    },
+    Created_at: (parent) => {
+      if (!parent.Created_at) return null;
+      return parent.Created_at instanceof Date 
+        ? parent.Created_at.toISOString() 
+        : parent.Created_at;
+    },
+    Updated_at: (parent) => {
+      if (!parent.Updated_at) return null;
+      return parent.Updated_at instanceof Date 
+        ? parent.Updated_at.toISOString() 
+        : parent.Updated_at;
+    },
+  },
+
   Query: {
     // Alumni queries
     async getAlumni() {
