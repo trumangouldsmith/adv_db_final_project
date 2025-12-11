@@ -15,6 +15,7 @@ import AlumniDirectory from './pages/AlumniDirectory';
 import AlumniProfile from './pages/AlumniProfile';
 import Events from './pages/Events';
 import EventDetail from './pages/EventDetail';
+import Photos from './pages/Photos';
 import AdminPanel from './pages/AdminPanel';
 
 const theme = createTheme({
@@ -92,6 +93,15 @@ function App() {
           element={
             <ProtectedRoute>
               <EventDetail />
+            </ProtectedRoute>
+          }
+        />
+        
+        <Route
+          path="/photos"
+          element={
+            <ProtectedRoute>
+              <Photos />
             </ProtectedRoute>
           }
         />
