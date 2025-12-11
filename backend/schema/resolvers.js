@@ -34,6 +34,11 @@ const resolvers = {
       if (!parent.File_id) return null;
       return parent.File_id.toString();
     },
+    Uploader_name: async (parent) => {
+      if (!parent.Alumni_id) return null;
+      const alumni = await Alumni.findOne({ Alumni_id: parent.Alumni_id });
+      return alumni ? alumni.Name : 'Unknown';
+    },
     Upload_date: (parent) => {
       if (!parent.Upload_date) return null;
       return parent.Upload_date instanceof Date 

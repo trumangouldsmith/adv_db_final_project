@@ -157,6 +157,7 @@ export const GET_PHOTOS = gql`
       File_size
       Mime_type
       Alumni_id
+      Uploader_name
       Event_id
       Tags
       Upload_date

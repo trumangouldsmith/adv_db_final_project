@@ -76,6 +76,7 @@ const typeDefs = gql`
     File_size: Int
     Mime_type: String
     Alumni_id: String!
+    Uploader_name: String
     Event_id: String
     Tags: [String]
     Upload_date: String

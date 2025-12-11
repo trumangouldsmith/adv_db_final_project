@@ -269,7 +269,7 @@ const Photos = () => {
                   {photo.File_name}
                 </Typography>
                 <Typography variant="caption" color="text.secondary" display="block">
-                  {photo.Upload_date && !isNaN(new Date(photo.Upload_date).getTime()) 
+                  By: {photo.Uploader_name || 'Unknown'} • {photo.Upload_date && !isNaN(new Date(photo.Upload_date).getTime()) 
                     ? new Date(photo.Upload_date).toLocaleDateString() 
                     : 'Unknown date'}
                 </Typography>
@@ -491,6 +491,9 @@ const Photos = () => {
             />
             <Box sx={{ mt: 2, textAlign: 'center', color: 'white' }}>
               <Typography variant="body1">{selectedPhoto.File_name}</Typography>
+              <Typography variant="body2" sx={{ opacity: 0.8 }}>
+                Uploaded by {selectedPhoto.Uploader_name || 'Unknown'}
+              </Typography>
               <Box sx={{ mt: 1, display: 'flex', justifyContent: 'center', gap: 1, flexWrap: 'wrap' }}>
                 {selectedPhoto.Tags?.map((tag, idx) => (
                   <Chip key={idx} label={tag} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }} />
