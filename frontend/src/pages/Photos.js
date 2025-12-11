@@ -244,7 +244,9 @@ const Photos = () => {
                   onClick={() => setSelectedPhoto(photo)}
                   onError={(e) => {
                     e.target.onerror = null;
-                    e.target.src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="200" height="200"%3E%3Crect fill="%23333" width="200" height="200"/%3E%3Ctext fill="%23666" x="50%25" y="50%25" text-anchor="middle" dy=".3em"%3ENo Image%3C/text%3E%3C/svg%3E';
+                    // Use picsum.photos for random stock images - seed based on photo ID for consistency
+                    const seed = photo.Photo_id || photo._id || Math.random();
+                    e.target.src = `https://picsum.photos/seed/${seed}/400/300`;
                   }}
                 />
                 <IconButton
@@ -480,6 +482,11 @@ const Photos = () => {
                 maxHeight: '85vh',
                 objectFit: 'contain',
                 borderRadius: 8
+              }}
+              onError={(e) => {
+                e.target.onerror = null;
+                const seed = selectedPhoto.Photo_id || selectedPhoto._id || Math.random();
+                e.target.src = `https://picsum.photos/seed/${seed}/800/600`;
               }}
             />
             <Box sx={{ mt: 2, textAlign: 'center', color: 'white' }}>
